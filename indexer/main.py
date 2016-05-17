@@ -76,20 +76,51 @@ def query(data: Data,
           pkg0: Package) -> Result:
     return ERROR
 
+class CommandParsingError(Exception): pass
+
+COMMANDS = ['INDEX', 'REMOVE', 'QUERY']
+
+def parse_command(data: bytes) -> Tuple[str, str, List[str]]:
+    if not data.endswith(b'\n'):
+        raise CommandParsingError()
+
+    parts = data.decode().strip().split('|')
+    if len(parts) != 3:
+        raise CommandParsingError()
+
+    if parts[0] not in COMMANDS:
+        raise CommandParsingError()
+
+    deps = parts[2]
+    if len(deps) > 0:
+        deps = deps.split(',')
+
+    return (parts[0], parts[2], deps)
+
 class IndexerRequestHandler(BaseRequestHandler):
     def handle(self) -> None:
         print("Incoming client connection, starting poll on socket")
-        err = None
-        while err is None:
+        # TODO less tight loop, preferably use a select-like thing. this i
+        while True:
             try:
-                data = self.request.recv(1024)
-                # TODO parse data
-                # TODO if mutable, acquire a lock
+                command = self.request.recv(1024)
+                (command, pkg_name, deps) = parse_command(command)
+                # TODO if mutable, acquire a lock (on what?)
                 # TODO don't need to always encode this
-                self.request.send(str(OK).encode(encoding='utf-8'))
+                self.request.send(OK.bytes)
+            except CommandParsingError as e:
+                try:
+                    print('GOT BROKEN MESSAGE ', command.decode())
+                    self.request.send(ERROR.bytes)
+                except BrokenPipeError as e:
+                    print("Tried to report error to client, got broken pipe")
             except BrokenPipeError as e:
-                print("Client connection closed, ceasing")
-                err = e
+                print("Client connection closed")
+                break
+            except ConnectionResetError as e:
+                print("Client connection closed")
+                break
+        print('Ceasing')
 
 class IndexerServer(ThreadingTCPServer):
     request_queue_size = 128
