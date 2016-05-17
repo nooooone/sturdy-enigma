@@ -1,6 +1,6 @@
 from socketserver import ThreadingTCPServer, BaseRequestHandler
 from threading import Thread
-from typing import List
+from typing import List, Tuple
 
 # TODO should use a queue for destructive operations
 
@@ -33,9 +33,10 @@ class Result:
     """Contains a response code as self.code; one of 'fail', 'ok', or 'error'.
     Uppercases the code before converting to a string so it can be passed back
     out over the network"""
-    __slots__ = ['code']
+    __slots__ = ['code', '_bs']
 
     def __init__(self, code: str) -> None:
+        self._bs = None
         if code not in ['fail', 'ok', 'error']:
             raise Exception("Bad argument to Result, got: '{}'".format(code))
 
@@ -46,6 +47,12 @@ class Result:
 
     def __str__(self) -> str:
         return self.code.upper() + '\n'
+
+    @property
+    def bytes(self) -> bytes:
+        if self._bs is None:
+            self._bs = str(self).encode('utf-8')
+        return self._bs
 
 ERROR = Result('error')
 FAIL = Result('fail')
