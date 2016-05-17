@@ -1,3 +1,9 @@
+from socketserver import ThreadingTCPServer, BaseRequestHandler
+from threading import Thread
+from typing import List
+
+# TODO should use a queue for destructive operations
+
 class Package:
     """Represents a package. The only data enumerated in the challenge
     description are package name and its dependencies, so that's all that is
@@ -6,7 +12,7 @@ class Package:
 
     def __init__(self,
                  name: str,
-                 dependencies: List[Package]) -> None:
+                 dependencies: List['Package']) -> None:
         self.name = name
         self.dependencies = dependencies
 
@@ -39,11 +45,11 @@ class Result:
         return self.code
 
     def __str__(self) -> str:
-        return self.code.upper()
+        return self.code.upper() + '\n'
 
-error = Result('error')
-fail = Result('fail')
-ok = Result('ok')
+ERROR = Result('error')
+FAIL = Result('fail')
+OK = Result('ok')
 
 def depends(pkg0: Package,
             pkg1: Package) -> bool:
@@ -53,15 +59,40 @@ def depends(pkg0: Package,
 def index(data: Data,
           pkg0: Package,
           deps: List[Package]) -> Result:
-    return error
+    return ERROR
 
 def remove(data: Data,
            pkg0: Package) -> Result:
-    return error
+    return ERROR
 
 def query(data: Data,
           pkg0: Package) -> Result:
-    return error
+    return ERROR
+
+class IndexerRequestHandler(BaseRequestHandler):
+    def handle(self) -> None:
+        print("Incoming client connection, starting poll on socket")
+        err = None
+        while err is None:
+            try:
+                data = self.request.recv(1024)
+                # TODO parse data
+                # TODO if mutable, acquire a lock
+                # TODO don't need to always encode this
+                self.request.send(str(OK).encode(encoding='utf-8'))
+            except BrokenPipeError as e:
+                print("Client connection closed, ceasing")
+                err = e
+
+class IndexerServer(ThreadingTCPServer):
+    request_queue_size = 128
+    allow_reuse_address = True
 
 if __name__ == '__main__':
-    print('runnin')
+    HOST, PORT = ('127.0.0.1', 8080)
+    print("Running at {}:{}".format(HOST, PORT))
+    server = IndexerServer((HOST, PORT), IndexerRequestHandler)
+    server_thread = Thread(target=server.serve_forever)
+    server_thread.daemon = True
+    server_thread.start()
+    server_thread.join()
