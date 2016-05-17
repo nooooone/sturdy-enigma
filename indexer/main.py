@@ -114,6 +114,7 @@ class IndexerRequestHandler(BaseRequestHandler):
                     self.request.send(ERROR.bytes)
                 except BrokenPipeError as e:
                     print("Tried to report error to client, got broken pipe")
+                    break
             except BrokenPipeError as e:
                 print("Client connection closed")
                 break
