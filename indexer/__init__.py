@@ -1,7 +1,7 @@
 import re
 from socketserver import ThreadingTCPServer, BaseRequestHandler
 from threading import Thread
-from typing import List, Tuple
+from typing import List, Tuple, ByteString
 
 # TODO should use a queue for destructive operations
 
@@ -56,7 +56,7 @@ class Result:
         return self.code.upper() + '\n'
 
     @property
-    def bytes(self) -> bytes:
+    def bytes(self) -> ByteString:
         if self._bs is None:
             self._bs = str(self).encode('utf-8')
         return self._bs
@@ -98,13 +98,12 @@ def parse_command(data: bytes) -> Tuple[str, str, List[str]]:
     if re.match(PKGNAME_RE, parts[1]) is None:
         raise CommandParsingError()
 
-    deps = parts[2]
-    if len(deps) > 0 and parts[0] == 'INDEX':
-        if re.match(DEPLIST_RE, deps) is None:
+    deplist_string = parts[2]
+    deps = []
+    if len(deplist_string) > 0 and parts[0] == 'INDEX':
+        if re.match(DEPLIST_RE, deplist_string) is None:
             raise CommandParsingError()
-        deps = list(filter(lambda s: len(s) > 0, deps.split(',')))
-    else:
-        deps = []
+        deps = list(filter(lambda s: len(s) > 0, deplist_string.split(',')))
 
     return (parts[0], parts[1], deps)
 
