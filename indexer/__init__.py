@@ -127,7 +127,7 @@ class IndexerServer(ThreadingTCPServer):
     request_queue_size = 128
     allow_reuse_address = True
 
-if __name__ == '__main__':
+def main():
     HOST, PORT = ('127.0.0.1', 8080)
     print("Running at {}:{}".format(HOST, PORT))
     server = IndexerServer((HOST, PORT), IndexerRequestHandler)
@@ -135,3 +135,6 @@ if __name__ == '__main__':
     server_thread.daemon = True
     server_thread.start()
     server_thread.join()
+
+if __name__ == '__main__':
+    main()
