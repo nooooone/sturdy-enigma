@@ -1,5 +1,5 @@
 from collections import namedtuple
-from functools import partial
+from functools import lru_cache
 import re
 from socketserver import ThreadingTCPServer, BaseRequestHandler
 import threading
@@ -87,6 +87,7 @@ def query(state: State, pkg_name: str) -> Result:
     with state.lock:
         return OK if state.index_store.get(pkg_name) else FAIL
 
+@lru_cache(maxsize=128)
 def parse_command(raw_command: ByteString) -> Tuple[str, str, List[str]]:
     """Given a byte string read from a socket, validates that the sent command
     is properly formed and returns a tuple of the command's components
