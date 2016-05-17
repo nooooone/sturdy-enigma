@@ -1,8 +1,15 @@
+import re
 from socketserver import ThreadingTCPServer, BaseRequestHandler
 from threading import Thread
 from typing import List, Tuple
 
 # TODO should use a queue for destructive operations
+
+COMMANDS = ['INDEX', 'REMOVE', 'QUERY']
+PKGNAME_RE = re.compile(r'^[a-z]+$')
+DEPLIST_RE = re.compile(r'^([a-z],?)+$')
+
+class CommandParsingError(Exception): pass
 
 class Package:
     """Represents a package. The only data enumerated in the challenge
@@ -76,9 +83,6 @@ def query(data: Data,
           pkg0: Package) -> Result:
     return ERROR
 
-class CommandParsingError(Exception): pass
-
-COMMANDS = ['INDEX', 'REMOVE', 'QUERY']
 
 def parse_command(data: bytes) -> Tuple[str, str, List[str]]:
     if not data.endswith(b'\n'):
@@ -91,16 +95,23 @@ def parse_command(data: bytes) -> Tuple[str, str, List[str]]:
     if parts[0] not in COMMANDS:
         raise CommandParsingError()
 
-    deps = parts[2]
-    if len(deps) > 0:
-        deps = deps.split(',')
+    if re.match(PKGNAME_RE, parts[1]) is None:
+        raise CommandParsingError()
 
-    return (parts[0], parts[2], deps)
+    deps = parts[2]
+    if len(deps) > 0 and parts[0] == 'INDEX':
+        if re.match(DEPLIST_RE, deps) is None:
+            raise CommandParsingError()
+        deps = list(filter(lambda s: len(s) > 0, deps.split(',')))
+    else:
+        deps = []
+
+    return (parts[0], parts[1], deps)
 
 class IndexerRequestHandler(BaseRequestHandler):
     def handle(self) -> None:
         print("Incoming client connection, starting poll on socket")
-        # TODO less tight loop, preferably use a select-like thing. this i
+        # TODO less tight loop. I tried both select and poll but couldn't get behavior I wanted.
         while True:
             try:
                 command = self.request.recv(1024)
