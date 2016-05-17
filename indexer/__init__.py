@@ -151,9 +151,9 @@ class IndexerRequestHandler(BaseRequestHandler):
                 command = self.request.recv(1024)
                 (command, pkg_name, deps) = parse_command(command)
 
-                actions = {'QUERY': partial(query, pkg_name),
-                           'REMOVE': partial(remove, pkg_name),
-                           'INDEX': partial(index, pkg_name, deps)}
+                actions = {'QUERY': partial(query, self.state, pkg_name),
+                           'REMOVE': partial(remove, self.state, pkg_name),
+                           'INDEX': partial(index, self.state, pkg_name, deps)}
 
                 self.request.send(actions[command]().bytes)
             except CommandParsingError as e:
