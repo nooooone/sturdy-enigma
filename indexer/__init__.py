@@ -73,18 +73,19 @@ def index(state: State,
     cannot be indexed because some of its dependencies aren't indexed yet and
     need to be installed first."""
     with state.lock:
-        pkg = state.index_store.get(pkg_name)
+        store = state.index_store
+        pkg = store.get(pkg_name)
 
         if pkg is not None:
             return OK
 
-        dep_pkgs = map(lambda d: state.index_store.get(d), deps)
+        dep_pkgs = list(map(lambda d: store.get(d), deps))
         if not all(dep_pkgs):
             return FAIL
         else:
-            index_store[pkg_name] = Package(pkg_name, deps, [])
+            store[pkg_name] = Package(pkg_name, deps)
             for dep_pkg in dep_pkgs:
-                dep_pkg.children.append(pkg)
+                dep_pkg.children += [pkg_name]
             return OK
 
 def remove(state: State,
