@@ -1,20 +1,9 @@
-# Digital Ocean Package Indexer Challenge
-
-## Requirements
-
-Python 3.5.1
-
-## Installation
-
-From the root of the project:
-
-    python3 -mvenv /tmp/indexervenv
-    source /tmp/indexervenv/bin/activate
-    python setup.py install
+# Package Indexer Challenge
 
 # Project Layout
 
     .
+    |-- Dockerfile # Uses ubuntu image to install and run this code
     |-- indexer
     |   |-- __init__.py # The implementation
     |-- README.md # This file
@@ -26,14 +15,36 @@ From the root of the project:
             |-- cmd_parse.py
             |-- commands.py
             |-- dispatch.py
+## Requirements
 
-## Running
+Python 3.5.1 **or** Docker
+
+## Installation (Docker)
+
+Build the provided Dockerfile. It uses the Ubuntu 16.04 image and exposes port 8080.
+
+## Installation (local)
+
+From the root of the project:
+
+    python3 -mvenv /tmp/indexervenv
+    source /tmp/indexervenv/bin/activate
+    python setup.py install
+
+
+## Running (Docker)
+
+Using the image id created from `docker build`,
+
+    docker run -p 127.0.0.1:8080:8080 <image id>
+
+## Running (local)
 
 Assuming your venv is active, just run `indexer`.
 
 ## Running the tests
 
-Assuming your venv is active, run `./run_tests.sh` from the root of the
+Do a local install and activate its venv, then run `./run_tests.sh` from the root of the
 project.
 
 There is a small integration test suite (tests/integration.py) that exercises
