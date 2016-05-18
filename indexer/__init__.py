@@ -158,7 +158,7 @@ def main():
     """Entry point for this module. Starts up the TCP server and sets up the
     shared thread state in an immutable data structure (a named tuple).
     """
-    HOST, PORT = ('127.0.0.1', 8080)
+    HOST, PORT = ('0.0.0.0', 8080)
     print("Running at {}:{}".format(HOST, PORT))
 
     IndexerRequestHandler.state = State({}, Lock())
