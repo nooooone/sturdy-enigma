@@ -13,7 +13,7 @@ import indexer
 
 HOST = '127.0.0.1'
 PORT = 8080
-WARM = 4 # seconds to wait for server to start
+WARM = 2 # seconds to wait for server to start
 FAIL = b'FAIL\n'
 OK = b'OK\n'
 ERROR = b'ERROR\n'
@@ -45,7 +45,6 @@ def test_server():
 class TestServer(unittest.TestCase):
     def test_can_send_good_stuff(self):
         with test_server() as req:
-
             script = [
                 (b'QUERY|coffee|\n', FAIL),
                 (b'QUERY|tea|\n', FAIL),
